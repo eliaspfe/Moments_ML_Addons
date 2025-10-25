@@ -72,11 +72,9 @@
         <a href="{{ url_for('user.index', username=comment.replied.author.username) }}">{{ comment.replied.author.name
           }}</a>:
         {% endif %}
-        {{ comment.body }}
-        <p>
+        <p id="translated-{{ comment.id }}">
   {{ comment.body }}
   <button class="btn btn-sm btn-link translate-btn" data-id="{{ comment.id }}">Übersetzen</button>
-  <span id="translated-{{ comment.id }}" class="text-muted small"></span>
 </p>
       </p>
     </div>
