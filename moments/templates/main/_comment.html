@@ -73,7 +73,11 @@
           }}</a>:
         {% endif %}
         {{ comment.body }}
-        <button>translate</button>
+        <p>
+  {{ comment.body }}
+  <button class="btn btn-sm btn-link translate-btn" data-id="{{ comment.id }}">Übersetzen</button>
+  <span id="translated-{{ comment.id }}" class="text-muted small"></span>
+</p>
       </p>
     </div>
   </div>
@@ -123,3 +127,13 @@
   </p>
   {% endif %}
 </div>
+<script>
+document.querySelectorAll('.translate-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = btn.dataset.id;
+    const res = await fetch(`/translate_comment/${id}`);
+    const data = await res.json();
+    document.getElementById(`translated-${id}`).innerText = data.translated;
+  });
+});
+</script>
