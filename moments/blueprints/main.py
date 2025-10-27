@@ -506,8 +506,10 @@ def delete_tag(photo_id, tag_id):
 
 # Translation feature using Hugging Face API
 load_dotenv(override=True)
-API_URL = "https://api-inference.huggingface.co/models/Helsinki-NLP/opus-mt-en-de"
-headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+API_URL = "https://router.huggingface.co/hf-inference/models/Helsinki-NLP/opus-mt-en-de"
+headers = {
+    "Authorization": f"Bearer {os.environ['HF_API_KEY']}",
+}
 
 
 @main_bp.route("/translate_comment/<int:comment_id>")
@@ -526,3 +528,9 @@ def translate_comment(comment_id):
     except Exception as e:
         translation = f"Error: {e}"
     return jsonify({"translated": translation})
+
+
+@main_bp.route("/original_comment/<int:comment_id>")
+def original_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    return jsonify({"original": comment.body})

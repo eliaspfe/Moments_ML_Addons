@@ -126,12 +126,25 @@
   {% endif %}
 </div>
 <script>
-document.querySelectorAll('.translate-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const id = btn.dataset.id;
+document.addEventListener('click', async (event) => {
+  const target = event.target;
+
+  // Wenn auf "Übersetzen" geklickt wird
+  if (target.classList.contains('translate-btn')) {
+    const id = target.dataset.id;
     const res = await fetch(`/translate_comment/${id}`);
     const data = await res.json();
-    document.getElementById(`translated-${id}`).innerText = data.translated;
-  });
+    document.getElementById(`translated-${id}`).innerHTML =
+      `${data.translated} <button class="btn btn-sm btn-link original-btn" data-id="${id}">Original anzeigen</button>`;
+  }
+
+  // Wenn auf "Original anzeigen" geklickt wird
+  if (target.classList.contains('original-btn')) {
+    const id = target.dataset.id;
+    const res = await fetch(`/original_comment/${id}`);
+    const data = await res.json();
+    document.getElementById(`translated-${id}`).innerHTML =
+      `${data.original} <button class="btn btn-sm btn-link translate-btn" data-id="${id}">Übersetzen</button>`;
+  }
 });
 </script>
