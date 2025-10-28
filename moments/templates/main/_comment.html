@@ -72,7 +72,10 @@
         <a href="{{ url_for('user.index', username=comment.replied.author.username) }}">{{ comment.replied.author.name
           }}</a>:
         {% endif %}
-        {{ comment.body }}
+        <p id="translated-{{ comment.id }}">
+  {{ comment.body }}
+  <button class="btn btn-sm btn-link translate-btn" data-id="{{ comment.id }}">Übersetzen</button>
+</p>
       </p>
     </div>
   </div>
@@ -122,3 +125,26 @@
   </p>
   {% endif %}
 </div>
+<script>
+document.addEventListener('click', async (event) => {
+  const target = event.target;
+
+  // Wenn auf "Übersetzen" geklickt wird
+  if (target.classList.contains('translate-btn')) {
+    const id = target.dataset.id;
+    const res = await fetch(`/translate_comment/${id}`);
+    const data = await res.json();
+    document.getElementById(`translated-${id}`).innerHTML =
+      `${data.translated} <button class="btn btn-sm btn-link original-btn" data-id="${id}">Original anzeigen</button>`;
+  }
+
+  // Wenn auf "Original anzeigen" geklickt wird
+  if (target.classList.contains('original-btn')) {
+    const id = target.dataset.id;
+    const res = await fetch(`/original_comment/${id}`);
+    const data = await res.json();
+    document.getElementById(`translated-${id}`).innerHTML =
+      `${data.original} <button class="btn btn-sm btn-link translate-btn" data-id="${id}">Übersetzen</button>`;
+  }
+});
+</script>
