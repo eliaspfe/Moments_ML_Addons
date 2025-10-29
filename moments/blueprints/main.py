@@ -51,7 +51,7 @@ def explore():
 
 @main_bp.route('/search')
 def search():
-    q = request.args.get('q').strip()
+    q = request.args.get('q', '').strip()
     if not q:
         flash('Enter keyword about photo, user or tag.', 'warning')
         return redirect_back()
@@ -61,19 +61,29 @@ def search():
     page = request.args.get('page', 1, type=int)
     per_page = current_app.config['MOMENTS_SEARCH_RESULT_PER_PAGE']
     
+    # Use LIKE search since whooshee_search doesn't work with SQLAlchemy 2.x
+    search_pattern = f'%{q}%'
+    
     if category == 'user':
-        pagination = User.query.whooshee_search(q).paginate(page=page, per_page=per_page)
+        stmt = select(User).where(
+            (User.username.ilike(search_pattern)) | (User.name.ilike(search_pattern))
+        )
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
     elif category == 'tag':
-        query = Tag.query.whooshee_search(q)
+        stmt = select(Tag).where(Tag.name.ilike(search_pattern))
         if tag_type != 'all':
-            query = query.filter(Tag.type == tag_type)
-        pagination = query.paginate(page=page, per_page=per_page)
-    else:  # photo search
-        base_query = Photo.query.whooshee_search(q)
+            stmt = stmt.where(Tag.type == tag_type)
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
+    else:  # photo search - search in description AND tags
+        # Search photos by description OR by tag name
+        stmt = select(Photo).outerjoin(Photo.tags).where(
+            (Photo.description.ilike(search_pattern)) | (Tag.name.ilike(search_pattern))
+        )
         if tag_type != 'all':
             # Filter photos that have tags of the specified type
-            base_query = base_query.join(Photo.tags).filter(Tag.type == tag_type)
-        pagination = base_query.paginate(page=page, per_page=per_page)
+            stmt = stmt.where(Tag.type == tag_type)
+        stmt = stmt.distinct()
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
         
     results = pagination.items
     return render_template('main/search.html', q=q, results=results, pagination=pagination, 
