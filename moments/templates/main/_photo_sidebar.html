@@ -59,8 +59,8 @@
       <p>
         {% if photo.tags %}
         {% for tag in photo.tags %}
-        <a class="badge text-bg-secondary rounded-pill text-decoration-none" href="{{ url_for('.show_tag', tag_id=tag.id) }}" target="_blank">
-          {{ render_icon('tag-fill') }} {{ tag.name }}
+        <a class="badge {% if tag.type == 'ai' %}text-bg-info{% else %}text-bg-secondary{% endif %} rounded-pill text-decoration-none" href="{{ url_for('.show_tag', tag_id=tag.id) }}" target="_blank">
+          {{ render_icon('tag-fill') }} {% if tag.type == 'ai' %}AI: {% endif %}{{ tag.name }}
         </a>
         {% endfor %}
         {% else %}

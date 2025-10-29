@@ -9,6 +9,7 @@ RUN pip install --upgrade pip && \
 
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=dev
+ENV HF_API_KEY=""
 
 # Initialize app and populate fake data
 RUN flask init-app && flask lorem
