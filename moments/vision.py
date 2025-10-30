@@ -13,15 +13,25 @@ def detect_objects(image_path: str) -> List[str]:
         return []
         
     API_URL_LABEL= "https://router.huggingface.co/hf-inference/models/google/vit-base-patch16-224"
+    
+    # Determine content type based on file extension
+    file_ext = Path(image_path).suffix.lower()
+    if file_ext == '.png':
+        content_type = 'image/png'
+    elif file_ext in ['.jpg', '.jpeg']:
+        content_type = 'image/jpeg'
+    else:
+        content_type = 'image/jpeg'  # Default fallback
+    
     headers = {
         "Authorization": f"Bearer {api_token}",
-        "Content-Type": "image/jpeg"
+        "Content-Type": content_type
     }
 
     try:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
-            current_app.logger.info(f'Sending request to HuggingFace API with token: {api_token[:10]}...')
+            current_app.logger.info(f'Sending request to HuggingFace API (format: {content_type}) with token: {api_token[:10]}...')
             response = requests.post(API_URL_LABEL, headers=headers, data=image_bytes)
         
         if response.status_code != 200:
