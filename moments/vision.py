@@ -12,7 +12,7 @@ def detect_objects(image_path: str) -> List[str]:
         current_app.logger.error('HF_TOKEN not set in configuration')
         return []
         
-    API_URL_LABEL= "https://router.huggingface.co/hf-inference/models/facebook/detr-resnet-50"
+    API_URL_LABEL= "https://router.huggingface.co/hf-inference/models/google/vit-base-patch16-224"
     headers = {
         "Authorization": f"Bearer {api_token}",
         "Content-Type": "image/jpeg"
@@ -30,8 +30,8 @@ def detect_objects(image_path: str) -> List[str]:
         
         results = response.json()
         current_app.logger.info(f'API Response: {results}') 
-        # Filter results with confidence > 0.9 and get unique labels
-        detected_objects = {item['label'].lower() for item in results if item['score'] > 0.9}
+        # Filter results with confidence > 0.5 and get unique labels
+        detected_objects = {item['label'].lower() for item in results if item['score'] >0.1}
         return list(detected_objects)
         
     except Exception as e:
