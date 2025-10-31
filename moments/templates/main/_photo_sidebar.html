@@ -16,7 +16,7 @@
       <div class="col">
         <a href="{{ url_for('user.index', username=photo.author.username) }}">
           <img class="rounded avatar-m"
-            src="{{ url_for('main.get_avatar', filename=photo.author.avatar_m) }}">
+            src="{{ url_for('main.get_avatar', filename=photo.author.avatar_m) }}" alt="{{ photo.description }}">
         </a>
       </div>
       <div class="col">

@@ -174,7 +174,7 @@ def upload():
             f, filename, current_app.config["MOMENTS_PHOTO_SIZES"]["medium"]
         )
 
-        temp = os.path.join(current_app.config["MOMENTS_UPLOAD_PATH"])
+        temp = os.path.join(current_app.config["MOMENTS_UPLOAD_PATH"], filename)
         response = query_for_description({
             "messages": [
                 {
@@ -182,7 +182,7 @@ def upload():
                     "content": [
                         {
                             "type": "text",
-                            "text": "Describe this image in one sentence."
+                            "text": "Write a short Image description like one that might be found on social media. Do not add quotations around your answer."
                         },
                         {
                             "type": "image_url",
@@ -193,7 +193,7 @@ def upload():
                     ]
                 }
             ],
-            "model": "google/gemma-3-12b-it:featherless-ai"
+            "model": "meta-llama/Llama-4-Scout-17B-16E-Instruct"
         })      
 
         try:
