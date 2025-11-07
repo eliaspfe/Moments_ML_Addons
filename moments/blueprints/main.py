@@ -29,7 +29,8 @@ from moments.utils import (
     validate_image,
 )
 from dotenv import load_dotenv
-import requests, os
+from PIL import Image
+import requests, os, base64, mimetypes
 
 main_bp = Blueprint("main", __name__)
 
@@ -184,12 +185,43 @@ def upload():
         filename_m = resize_image(
             f, filename, current_app.config["MOMENTS_PHOTO_SIZES"]["medium"]
         )
+
+        temp = os.path.join(current_app.config["MOMENTS_UPLOAD_PATH"], filename)
+        response = query_for_description({
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Write a short Image description like one that might be found on social media. Do not add quotations around your answer."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"{image_to_data_url(temp)}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "model": "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+        })      
+
+        try:
+            desc = response['choices'][0]['message']['content']
+        except Exception as e:
+            desc = None
+        
         photo = Photo(
             filename=filename,
             filename_s=filename_s,
             filename_m=filename_m,
             author=current_user._get_current_object(),
+            description = desc
         )
+       
+
         db.session.add(photo)
         db.session.commit()
 
@@ -212,6 +244,26 @@ def upload():
 
     return render_template('main/upload.html')
 
+def query_for_description(payload):
+    headers = {
+    "Authorization": f"Bearer {os.environ['HF_API_KEY']}",
+    }
+    response = requests.post(DESC_API_URL, headers=headers, json=payload)
+    return response.json()
+    
+def image_to_data_url(im):
+    mime_type, _ = mimetypes.guess_type(im)
+    if mime_type is None:
+        mime_type = "application/octet-stream"
+
+    # Read the image and encode it to base64
+    with open(im, "rb") as f:
+        image_bytes = f.read()
+        base64_str = base64.b64encode(image_bytes).decode("utf-8")
+
+    # Build the Data URL
+    data_url = f"data:{mime_type};base64,{base64_str}"
+    return data_url
 
 @main_bp.route("/photo/<int:photo_id>")
 def show_photo(photo_id):
@@ -540,7 +592,7 @@ API_URL = "https://router.huggingface.co/hf-inference/models/Helsinki-NLP/opus-m
 headers = {
     "Authorization": f"Bearer {os.environ['HF_API_KEY']}",
 }
-
+DESC_API_URL = "https://router.huggingface.co/v1/chat/completions"
 
 @main_bp.route("/translate_comment/<int:comment_id>")
 def translate_comment(comment_id):
