@@ -321,6 +321,7 @@ class Tag(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(64), index=True, unique=True)
+    type: Mapped[str] = mapped_column(String(10), default='user')  # 'user' or 'ai'
 
     photos: WriteOnlyMapped['Photo'] = relationship(secondary=photo_tag, back_populates='tags', passive_deletes=True)
 

@@ -13,6 +13,8 @@ from flask import (
 from flask_login import current_user, login_required
 from sqlalchemy import func, select
 from sqlalchemy.orm import with_parent
+import os
+from moments.vision import detect_objects
 
 from moments.core.extensions import db
 from moments.decorators import confirm_required, permission_required
@@ -75,28 +77,38 @@ def search():
         flash("Enter keyword about photo, user or tag.", "warning")
         return redirect_back()
 
-    category = request.args.get("category", "photo")
-    page = request.args.get("page", 1, type=int)
-    per_page = current_app.config["MOMENTS_SEARCH_RESULT_PER_PAGE"]
-    # TODO: add SQLAlchemy 2.x support to Flask-Whooshee then update the following code
-    if category == "user":
-        pagination = User.query.whooshee_search(q).paginate(
-            page=page, per_page=per_page
+    category = request.args.get('category', 'photo')
+    tag_type = request.args.get('tag_type', 'all')  # all, user, or ai
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config['MOMENTS_SEARCH_RESULT_PER_PAGE']
+    
+    # Use LIKE search since whooshee_search doesn't work with SQLAlchemy 2.x
+    search_pattern = f'%{q}%'
+    
+    if category == 'user':
+        stmt = select(User).where(
+            (User.username.ilike(search_pattern)) | (User.name.ilike(search_pattern))
         )
-    elif category == "tag":
-        pagination = Tag.query.whooshee_search(q).paginate(page=page, per_page=per_page)
-    else:
-        pagination = Photo.query.whooshee_search(q).paginate(
-            page=page, per_page=per_page
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
+    elif category == 'tag':
+        stmt = select(Tag).where(Tag.name.ilike(search_pattern))
+        if tag_type != 'all':
+            stmt = stmt.where(Tag.type == tag_type)
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
+    else:  # photo search - search in description AND tags
+        # Search photos by description OR by tag name
+        stmt = select(Photo).outerjoin(Photo.tags).where(
+            (Photo.description.ilike(search_pattern)) | (Tag.name.ilike(search_pattern))
         )
+        if tag_type != 'all':
+            # Filter photos that have tags of the specified type
+            stmt = stmt.where(Tag.type == tag_type)
+        stmt = stmt.distinct()
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
+        
     results = pagination.items
-    return render_template(
-        "main/search.html",
-        q=q,
-        results=results,
-        pagination=pagination,
-        category=category,
-    )
+    return render_template('main/search.html', q=q, results=results, pagination=pagination, 
+                         category=category, tag_type=tag_type)
 
 
 @main_bp.route("/notifications")
@@ -180,7 +192,25 @@ def upload():
         )
         db.session.add(photo)
         db.session.commit()
-    return render_template("main/upload.html")
+
+        # Automatically detect objects and add AI tags
+        try:
+            image_path = os.path.join(current_app.config['MOMENTS_UPLOAD_PATH'], filename)
+            objects = detect_objects(str(image_path))
+            if objects:
+                for object_name in objects:
+                    tag = db.session.scalar(select(Tag).filter_by(name=object_name))
+                    if tag is None:
+                        tag = Tag(name=object_name, type='ai')  # Set type to 'ai' for automatically detected tags
+                        db.session.add(tag)
+                        db.session.commit()
+                    if tag not in photo.tags:
+                        photo.tags.append(tag)
+                db.session.commit()
+        except Exception as e:
+            current_app.logger.error(f'Error during object detection: {e}')
+
+    return render_template('main/upload.html')
 
 
 @main_bp.route("/photo/<int:photo_id>")

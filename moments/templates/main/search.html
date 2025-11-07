@@ -17,6 +17,20 @@
         href="{{ url_for('.search', q=q, category='user') }}">User</a>
       <a class="nav-item nav-link {% if category == 'tag' %}active{% endif %}"
         href="{{ url_for('.search', q=q, category='tag') }}">Tag</a>
+      
+      {% if category in ['photo', 'tag'] %}
+      <div class="mt-3">
+        <h6>Tag Type</h6>
+        <div class="list-group">
+          <a class="list-group-item {% if tag_type == 'all' %}active{% endif %}"
+            href="{{ url_for('.search', q=q, category=category, tag_type='all') }}">All Tags</a>
+          <a class="list-group-item {% if tag_type == 'user' %}active{% endif %}"
+            href="{{ url_for('.search', q=q, category=category, tag_type='user') }}">User Tags</a>
+          <a class="list-group-item {% if tag_type == 'ai' %}active{% endif %}"
+            href="{{ url_for('.search', q=q, category=category, tag_type='ai') }}">AI Tags 🤖</a>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
   <div class="col-md-9">
@@ -29,7 +43,7 @@
         {{ user_card(item) }}
       {% else %}
       <a class="badge text-bg-light rounded-pill" href="{{ url_for('.show_tag', tag_id=item.id) }}">
-        {{ item.name }} {{ item.photos|length }}
+        {{ item.name }} {{ item.photos_count }}
       </a>
       {% endif %}
       {% endfor %}

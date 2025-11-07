@@ -36,7 +36,7 @@ class BaseConfig:
 
     SECRET_KEY = os.getenv('SECRET_KEY', 'secret string')
     MAX_CONTENT_LENGTH = 3 * 1024 * 1024  # file size exceed to 3 Mb will return a 413 error response.
-
+    HF_API_KEY = os.getenv('HF_API_KEY')
     BOOTSTRAP_SERVE_LOCAL = True
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
